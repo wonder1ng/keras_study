@@ -77,8 +77,8 @@ plt.show(block=False)
 plt.pause(2)
 plt.close()
 
-# 컬러
 
+# 컬러
 import keras.backend
 from sklearn import model_selection, metrics
 from sklearn.preprocessing import MinMaxScaler
@@ -98,6 +98,8 @@ class CNN(Model):
         model.in_shape = in_shape
         model.build_model()
         super().__init__(model.x, model.y)
+        model.cl_part = Model(model.x, model.z_cl)
+        model.fl_part = Model(model.x, model.z_fl)
         model.compile()
 
     def build_model(model):
@@ -117,9 +119,12 @@ class CNN(Model):
         z_fl = h
 
         y = Dense(nb_classes, activation='softmax', name='preds')(h)
-        model.cl_part = Model(x, z_cl)
-        model.fl_part = Model(x, z_fl)
+        model.z_cl = z_cl
+        model.z_fl = z_fl
         model.x, model.y = x, y
+
+    def compile(model):
+        Model.compile(model, loss='categorical_crossentropy', optimizer='adadelta', metrics=['acc'])
 
 
 class DataSet():
@@ -201,7 +206,7 @@ class Machine():
         print('Confusion matrix')
         y_test_pred = model.predict(data.X_test, verbose=0)
         y_test_pred = np.argmax(y_test_pred, axis=1)
-        print(metrics.confusion_matrix(data.y_test, y_test_pred))
+        print(metrics.confusion_matrix(np.argmax(data.y_test, axis=1), y_test_pred))
 
         print('Test score:', score[0])
         print('Test accuracy:', score[1])
@@ -217,29 +222,30 @@ class Machine():
             plt.figure(figsize=(12, 4))
             plt.subplot(1, 2, 1)
             skeras.plot_acc(history)
-            plt.subplot(1, 2, 3)
+            plt.subplot(1, 2, 2)
             skeras.plot_loss(history)
+            plot_acc(history)
             plt.show(block=False)
             plt.pause(2)
             plt.close()
+
         self.history = history
 
 
 from keras.datasets import cifar10
 import keras
-
 assert keras.backend.image_data_format() == 'channels_last'
-from original.keraspp import aicnn
 
-
-class Machine(aicnn.Machine):
+class Machine(Machine):
     def __init__(self):
-        (X, y), (x_test, y_test) = cifar10.load_data()
-        super().__init__(X, y, nb_classes=10)
+        (X, y), (X_test, y_test) = cifar10.load_data()
+        super().__init__(X=X, y=y, nb_classes=10)
+
 
 def main():
     m = Machine()
     m.run()
+
 
 if __name__ == '__main__':
     main()
