@@ -107,7 +107,8 @@ ENV/
 .mypy_cache/
 .DS_Store
 
-# picture
+# my_ignore
+original/
 .png
 .jpg
 .jpeg

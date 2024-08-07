@@ -285,15 +285,16 @@ class GAN(models.Sequential):
         xw = np.concatenate((x, w))
         y2 = [1] * ln + [0] * ln
 
-        # train_on_batch에서 발생하는 오류 해결 못함
+        # train_on_batch에서 list를 넣으면 아래의 오류가 발생하여 array로 변환해야 함
         # AttributeError: 'int' object has no attribute 'shape'
 
-        # d_loss = self.discriminator.train_on_batch(xw, y2)
-        d_loss = 0
+        d_loss = self.discriminator.train_on_batch(xw, np.array(y2))
         z = self.get_z(ln)
         self.discriminator.trainable = False
 
-        # g_loss = self.generator.train_on_batch(z, [1] * ln)
+        # 아래 오류는 해결 못함
+        #     ValueError: Dimensions must be equal, but are 28 and 16 for '{{node mse_4d_tf/sub}} = Sub[T=DT_FLOAT](sequential/conv2d_1/Tanh, IteratorGetNext:1)' with input shapes: [16,1,28,28], [16].
+        # g_loss = self.generator.train_on_batch(z, np.array([1] * ln, dtype=np.float32))
         g_loss = 0
         self.discriminator.trainable = True
 
